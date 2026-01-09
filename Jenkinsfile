@@ -20,4 +20,22 @@ pipeline {
             }
         }
     }
+
+    post {
+        success {
+            sh '''
+            curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"✅ Jenkins Pipeline SUCCESS\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\"}" \
+            $SLACK_WEBHOOK_URL
+            '''
+        }
+
+        failure {
+            sh '''
+            curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"❌ Jenkins Pipeline FAILED\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\"}" \
+            $SLACK_WEBHOOK_URL
+            '''
+        }
+    }
 }
