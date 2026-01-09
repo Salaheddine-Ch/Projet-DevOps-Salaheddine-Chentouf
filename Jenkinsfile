@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        SLACK_WEBHOOK_URL = credentials('slack-webhook')
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -23,19 +27,25 @@ pipeline {
 
     post {
         success {
-            sh '''
-            curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"✅ Jenkins Pipeline SUCCESS\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\"}" \
-            $SLACK_WEBHOOK_URL
-            '''
+            script {
+                def msg = "✅ Jenkins Pipeline SUCCESS\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}"
+                sh(returnStatus: true, script: """
+                    curl -sS -X POST -H 'Content-type: application/json' \
+                    --data '{"text":"${msg.replace('"','\\\\\\"")}"}' \
+                    "${SLACK_WEBHOOK_URL}"
+                """)
+            }
         }
 
         failure {
-            sh '''
-            curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"❌ Jenkins Pipeline FAILED\\nJob: ${JOB_NAME}\\nBuild: #${BUILD_NUMBER}\"}" \
-            $SLACK_WEBHOOK_URL
-            '''
+            script {
+                def msg = "❌ Jenkins Pipeline FAILED\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}"
+                sh(returnStatus: true, script: """
+                    curl -sS -X POST -H 'Content-type: application/json' \
+                    --data '{"text":"${msg.replace('"','\\\\\\"")}"}' \
+                    "${SLACK_WEBHOOK_URL}"
+                """)
+            }
         }
     }
 }
